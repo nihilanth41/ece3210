@@ -1,0 +1,264 @@
+Turbo Assembler	 Version 4.1	    03/16/15 13:04:45	    Page 1
+lab3.asm
+
+
+
+      1				     ;http://stackoverflow.com/questions/6560011/emu8086-find-minimum-and-maximum-in-an-array
+      2				     INCLUDE lab3.mac
+1     3				     PRINT_STR MACRO STRING
+1     4					     MOV DX,OFFSET STRING
+1     5					 MOV AH,9
+1     6					     INT 21H
+1     7				     ENDM
+1     8
+1     9				     GET_STR MACRO BUFFER
+1    10					     MOV DX,OFFSET BUFFER
+1    11					     MOV AH,0AH
+1    12					     INT 21H
+1    13				     ENDM
+1    14
+1    15				     GET_CHAR MACRO CHAR
+1    16					     MOV AH,01H
+1    17					     INT 21H
+1    18					     MOV CHAR,AL
+1    19				     ENDM
+1    20
+1    21				     GET_CHARNE	MACRO
+1    22					     MOV AH,07H		     ;no echo option
+1    23					     INT 21H
+1    24				     ENDM
+1    25
+1    26				     PRINT_CHAR	MACRO CHAR
+1    27					     MOV DL,CHAR
+1    28					     MOV AH,02H
+1    29					     INT 21H
+1    30				     ENDM
+1    31
+1    32				     RET_DOS MACRO
+1    33					     MOV AX,4C00H    ;return to	DOS
+1    34					     INT 21H
+1    35				     ENDM
+     36	0000			     .model small
+     37	0000			     .stack 100h
+     38	0000			     .data
+     39	0000  0A 0D 4D 49 4E 49	4D+  MIN_STR db	0AH,0DH,"MINIMAL NUMBER	IS: ",'$'
+     40	      41 4C 20 4E 55 4D	42+
+     41	      45 52 20 49 53 3A	20+
+     42	      24
+     43	0016  0A 0D 4D 41 58 49	4D+  MAX_STR db	0AH,0DH,"MAXIMAL NUMBER	IS: ",'$'
+     44	      41 4C 20 4E 55 4D	42+
+     45	      45 52 20 49 53 3A	20+
+     46	      24
+     47	002C  0A 0D 4D 41 58 49	4D+  EXTRA_STR db 0AH,0DH,"MAXIMAL NUMBER-2*MINIMAL NUMBER= ",'$'
+     48	      41 4C 20 4E 55 4D	42+
+     49	      45 52 2D 32 2A 4D	49+
+     50	      4E 49 4D 41 4C 20	4E+
+     51	      55 4D 42 45 52 3D	20+
+     52	      24
+     53	0050  0A 81 21 47 75 0F	49+  ARRAY db 0AH,081H,021H,047H,075H,0FH,049H,090H,0AH,0AH  ;array to find min/max number
+     54	      90 0A 0A
+     55	      =000A		     COUNT EQU 10			     ;22number of elements in array
+     56	005A  ????		     MIN dw ?
+     57	005C  ????		     MAX dw ?
+Turbo Assembler	 Version 4.1	    03/16/15 13:04:45	    Page 2
+lab3.asm
+LAB 3
+
+
+     58	005E  ??		     MIN_C db ?
+     59	005F  ??		     MAX_C db ?
+     60	0060  ??		     SUB_RESULT	db ?
+     61	0061  ??		     CHAR_PACKED db ?				     ;hex value	to convert to ASCII
+     62	0062  ??		     CHAR_H  db	?				     ;location to store	first ASCII char
+     63	0063  ??		     CHAR_L  db	?				     ;location to store	second ASCII char
+     64	0064			     .code
+     65				     ;--------------------------------------------
+     66				     ;CONV_ASCII -- CONVERT FROM PACKED	BCD TO ASCII. PACKED BCD TO CONVERT IS STORED IN CHAR_PACKED
+     67	0000			     CONV_ASCII	PROC
+     68	0000  A0 0061r		     mov AL,CHAR_PACKED				     ;copy packed BCD to AL
+     69	0003  8A E0		     mov AH,AL						     ;copy packed BCD to AH
+     70	0005  25 F00F		     AND AX,0F00Fh				     ;mask upper and lower nibble of high/low byte
+     71	0008  B1 04		     mov CL,4						     ;shift-right 4
+     72	000A  D2 EC		     SHR AH,CL						     ;
+     73	000C  0D 3030		     OR	AX,3030h					     ;add 30 to	each byte using	a bitwise OR
+     74				     ;CHECK FOR	LETTER/NUMBER
+     75	000F  3C 39		     CMP AL,39h						     ;if al <= 39h -> do nothing
+     76	0011  7E 02		     jle SKIP1
+     77	0013  04 07		     add AL,07h						     ;else add 7 (39+7=41h)
+     78	0015			     SKIP1:
+     79	0015  80 FC 39		     CMP ah,39h
+     80	0018  7E 03		     jle SKIP2
+     81	001A  80 C4 07		     ADD AH,07h
+     82	001D			     SKIP2:
+     83				     ;STORE CONVERTED CHARS AND	RETURN
+     84	001D  86 E0		     XCHG AH,AL						     ;swap high	and low	byte
+     85	001F  88 26 0062r	     MOV CHAR_H,AH				     ;store in memory
+     86	0023  A2 0063r		     MOV CHAR_L,AL				     ;store in memory
+     87	0026  C3		     RET
+     88	0027			     CONV_ASCII	ENDP
+     89				     ;--------------------------------------------
+     90	0027			     main proc
+     91	0027  B8 0000s		     mov ax,@data				     ;
+     92	002A  8E D8		     mov ds,ax						     ;initialize data segment
+     93
+     94	002C  B9 000A		     mov CX,COUNT				     ;initialize CX as counter (# of elements)
+     95	002F  BE 0050r		     lea SI,ARRAY				     ;load array to SI
+     96	0032  AC		     lodsb						     ;loads word in SI to AX
+     97												     ;first element of array is	in  +
+     98				     AX
+     99	0033  A3 005Ar		     mov MIN,AX						     ;use first	element	as reference for    +
+    100				     rest of the array
+    101	0036  A3 005Cr		     mov MAX,AX						     ;
+    102	0039  49		     dec CX
+    103	003A			     M:
+    104	003A  AC			     lodsb					     ;get next element from SI (
+    105	003B  39 06 005Ar		     cmp MIN,ax					     ; (min-ax)
+    106	003F  7E 06			     jle m1					     ; (<=) -->	keep minimum
+    107	0041  A3 005Ar			     mov MIN,ax					     ; else new	minimum
+    108	0044  EB 0A 90			     jmp m2					     ;
+    109	0047			     m1:							     ;check max
+    110	0047  39 06 005Cr		     cmp MAX,ax
+    111	004B  7D 03			     jge m2					     ;keep max
+    112	004D  A3 005Cr			     mov MAX,ax					     ;else new max
+    113	0050			     m2:
+    114	0050  E2 E8			     loop M					     ;loop instruction
+Turbo Assembler	 Version 4.1	    03/16/15 13:04:45	    Page 3
+lab3.asm
+LAB 3
+
+
+    115
+    116	0052  A0 005Ar			     mov al,byte ptr MIN
+    117	0055  8A 26 005Cr		     mov ah,byte ptr MAX
+    118	0059  A2 005Er			     mov MIN_C,al
+    119	005C  88 26 005Fr		     mov MAX_C,ah
+    120					     ;print minimum to screen
+    121	0060  A2 0061r			     mov CHAR_PACKED,al
+    122	0063  E8 FF9A			     call CONV_ASCII
+    123					     PRINT_STR MIN_STR			     ;print converted characters to screen (minimum +
+    124				     first)
+1   125	0066  BA 0000r			     MOV DX,OFFSET MIN_STR
+1   126	0069  B4 09			 MOV AH,9
+1   127	006B  CD 21			     INT 21H
+    128					     PRINT_CHAR	CHAR_L
+1   129	006D  8A 16 0063r		     MOV DL,CHAR_L
+1   130	0071  B4 02			     MOV AH,02H
+1   131	0073  CD 21			     INT 21H
+    132					     PRINT_CHAR	CHAR_H
+1   133	0075  8A 16 0062r		     MOV DL,CHAR_H
+1   134	0079  B4 02			     MOV AH,02H
+1   135	007B  CD 21			     INT 21H
+    136
+    137					     ;print maximum to screen
+    138	007D  A0 005Fr			     mov al,MAX_C			     ;load MAX to be converted to ascii
+    139	0080  A2 0061r			     mov CHAR_PACKED,al			     ;load to correct address
+    140	0083  E8 FF7A			     call CONV_ASCII			     ;hex2ascii
+    141					     PRINT_STR MAX_STR
+1   142	0086  BA 0016r			     MOV DX,OFFSET MAX_STR
+1   143	0089  B4 09			 MOV AH,9
+1   144	008B  CD 21			     INT 21H
+    145					     PRINT_CHAR	CHAR_L
+1   146	008D  8A 16 0063r		     MOV DL,CHAR_L
+1   147	0091  B4 02			     MOV AH,02H
+1   148	0093  CD 21			     INT 21H
+    149					     PRINT_CHAR	CHAR_H
+1   150	0095  8A 16 0062r		     MOV DL,CHAR_H
+1   151	0099  B4 02			     MOV AH,02H
+1   152	009B  CD 21			     INT 21H
+    153
+    154					     ;calculate	MAX-2*MIN and print to screen
+    155	009D  8A 26 005Fr		     mov AH,MAX_C			     ;move max to AH
+    156	00A1  A0 005Er			     mov AL,MIN_C			     ;move min to AL
+    157	00A4  2A E0			     sub AH,AL					     ;MAX = max-(2*min)
+    158	00A6  2A E0			     sub AH,AL
+    159	00A8  88 26 0060r		     mov SUB_RESULT,AH			     ;move result into SUB_RESULT
+    160	00AC  88 26 0061r		     mov CHAR_PACKED,AH
+    161	00B0  E8 FF4D			     call CONV_ASCII
+    162					     PRINT_STR EXTRA_STR
+1   163	00B3  BA 002Cr			     MOV DX,OFFSET EXTRA_STR
+1   164	00B6  B4 09			 MOV AH,9
+1   165	00B8  CD 21			     INT 21H
+    166					     PRINT_CHAR	CHAR_L
+1   167	00BA  8A 16 0063r		     MOV DL,CHAR_L
+1   168	00BE  B4 02			     MOV AH,02H
+1   169	00C0  CD 21			     INT 21H
+    170					     PRINT_CHAR	CHAR_H
+1   171	00C2  8A 16 0062r		     MOV DL,CHAR_H
+Turbo Assembler	 Version 4.1	    03/16/15 13:04:45	    Page 4
+lab3.asm
+LAB 3
+
+
+1   172	00C6  B4 02			     MOV AH,02H
+1   173	00C8  CD 21			     INT 21H
+    174
+    175
+    176
+    177
+    178				     ;--EXIT PROGRAM
+    179				     RET_DOS				     ;return to	DOS
+1   180	00CA  B8 4C00			     MOV AX,4C00H    ;return to	DOS
+1   181	00CD  CD 21			     INT 21H
+    182	00CF			     main endp
+    183				     end main
+Turbo Assembler	 Version 4.1	    03/16/15 13:04:45	    Page 5
+Symbol Table
+LAB 3
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/16/15"
+??FILENAME			  Text	 "lab3	  "
+??TIME				  Text	 "13:04:45"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 _TEXT
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 LAB3
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 2
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+ARRAY				  Byte	 DGROUP:0050
+CHAR_H				  Byte	 DGROUP:0062
+CHAR_L				  Byte	 DGROUP:0063
+CHAR_PACKED			  Byte	 DGROUP:0061
+CONV_ASCII			  Near	 _TEXT:0000
+COUNT				  Number 000A
+EXTRA_STR			  Byte	 DGROUP:002C
+M				  Near	 _TEXT:003A
+M1				  Near	 _TEXT:0047
+M2				  Near	 _TEXT:0050
+MAIN				  Near	 _TEXT:0027
+MAX				  Word	 DGROUP:005C
+MAX_C				  Byte	 DGROUP:005F
+MAX_STR				  Byte	 DGROUP:0016
+MIN				  Word	 DGROUP:005A
+MIN_C				  Byte	 DGROUP:005E
+MIN_STR				  Byte	 DGROUP:0000
+SKIP1				  Near	 _TEXT:0015
+SKIP2				  Near	 _TEXT:001D
+SUB_RESULT			  Byte	 DGROUP:0060
+
+Macro Name
+
+GET_CHAR
+GET_CHARNE
+GET_STR
+PRINT_CHAR
+PRINT_STR
+RET_DOS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  STACK				  16  0100 Para	  Stack	  STACK
+  _DATA				  16  0064 Word	  Public  DATA
+_TEXT				  16  00CF Word	  Public  CODE
+

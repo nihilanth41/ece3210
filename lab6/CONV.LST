@@ -1,0 +1,72 @@
+Turbo Assembler	 Version 4.1	    04/21/15 13:45:18	    Page 1
+conv.asm
+
+
+
+      1				     ;CONV_ASCII -- CONVERT FROM PACKED	BCD TO ASCII. PACKED BCD TO CONVERT IS STORED IN CHAR_PACKED
+      2				     EXTRN CHAR_PACKED:	BYTE
+      3				     EXTRN CHAR_H: BYTE
+      4				     EXTRN CHAR_L: BYTE
+      5				     PUBLIC CONV_ASCII
+      6	0000			     .MODEL small
+      7	0000			     .CODE
+      8	0000			     CONV_ASCII	PROC FAR
+      9	0000  A0 0000e		     mov AL,CHAR_PACKED				     ;copy packed BCD to AL
+     10	0003  8A E0		     mov AH,AL						     ;copy packed BCD to AH
+     11	0005  25 F00F		     AND AX,0F00Fh				     ;mask upper and lower nibble of high/low byte
+     12	0008  B1 04		     mov CL,4						     ;shift-right 4
+     13	000A  D2 EC		     SHR AH,CL						     ;
+     14	000C  0D 3030		     OR	AX,3030h					     ;add 30 to	each byte using	a bitwise OR
+     15				     ;CHECK FOR	LETTER/NUMBER
+     16	000F  3C 39		     CMP AL,39h						     ;if al <= 39h -> do nothing
+     17	0011  7E 02		     jle SKIP1
+     18	0013  04 07		     add AL,07h						     ;else add 7 (39+7=41h)
+     19	0015			     SKIP1:
+     20	0015  80 FC 39		     CMP ah,39h
+     21	0018  7E 03		     jle SKIP2
+     22	001A  80 C4 07		     ADD AH,07h
+     23	001D			     SKIP2:
+     24				     ;STORE CONVERTED CHARS AND	RETURN
+     25	001D  86 E0		     XCHG AH,AL						     ;swap high	and low	byte
+     26	001F  88 26 0000e	     MOV CHAR_H,AH				     ;store in memory
+     27	0023  A2 0000e		     MOV CHAR_L,AL				     ;store in memory
+     28	0026  CB		     RET
+     29	0027			     CONV_ASCII	ENDP
+     30						END
+Turbo Assembler	 Version 4.1	    04/21/15 13:45:18	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "04/21/15"
+??FILENAME			  Text	 "conv	  "
+??TIME				  Text	 "13:45:18"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 _TEXT
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 CONV
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 2
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+CHAR_H				  Byte	 ----:---- Extern
+CHAR_L				  Byte	 ----:---- Extern
+CHAR_PACKED			  Byte	 ----:---- Extern
+CONV_ASCII			  Far	 _TEXT:0000
+SKIP1				  Near	 _TEXT:0015
+SKIP2				  Near	 _TEXT:001D
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+_TEXT				  16  0027 Word	  Public  CODE
+
