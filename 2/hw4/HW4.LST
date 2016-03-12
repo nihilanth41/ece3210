@@ -1,0 +1,197 @@
+Turbo Assembler	 Version 4.1	    03/09/16 17:35:30	    Page 1
+hw4.ASM
+
+
+
+      1				     include dosmac.mac
+1     2				     PRINT_STR MACRO STRING
+1     3					     PUSH DX
+1     4					     PUSH AX
+1     5					     MOV DX,OFFSET STRING
+1     6					     MOV AH,9
+1     7					     INT 21H
+1     8					     POP AX
+1     9					     POP DX
+1    10				     ENDM
+1    11
+1    12				     GET_STR MACRO BUFFER
+1    13					     MOV DX,OFFSET BUFFER
+1    14					     MOV AH,0AH
+1    15					     INT 21H
+1    16				     ENDM
+1    17
+1    18				     GET_CHAR MACRO CHAR
+1    19					     MOV AH,01H
+1    20					     INT 21H
+1    21					     MOV CHAR,AL
+1    22				     ENDM
+1    23
+1    24				     GET_CHARNE	MACRO
+1    25					     MOV AH,07H		     ;no echo option
+1    26					     INT 21H
+1    27				     ENDM
+1    28
+1    29				     PRINT_CHAR	MACRO CHAR
+1    30					     PUSH DX
+1    31					     PUSH AX
+1    32					     MOV DL,CHAR
+1    33					     MOV AH,02H
+1    34					     INT 21H
+1    35					     POP AX
+1    36					     POP DX
+1    37				     ENDM
+1    38
+1    39				     RET_DOS MACRO
+1    40					     MOV AX,4C00H	     ;return to	DOS
+1    41					     INT 21H
+1    42				     ENDM
+     43	0000			     .MODEL  SMALL
+     44	0000			     .STACK  266
+     45	0000			     .DATA
+     46	0000  45 6E 74 65 72 20	61+	  PROMPT    DB 'Enter a	string:	', '$'
+     47	      20 73 74 72 69 6E	67+
+     48	      3A 20 24
+     49	0011  0D 0A 24			  NEWLINE   DB 0DH,0AH,'$'
+     50	0014  0400*(3F)			  byteArea  DB 1024 dup('?')
+     51	0414  64			  stringIn  DB 100	     ; Max number of characters	expected
+     52	0415  00			  Num	    DB 0	     ; Actual number of	characters received
+     53	0416  64*(24)			  Act_Buf   DB 100 DUP ('$')
+     54
+     55	047A			     .CODE
+     56					     .STARTUP
+1    57	0000			     @Startup:
+Turbo Assembler	 Version 4.1	    03/09/16 17:35:30	    Page 2
+hw4.ASM
+
+
+
+1    58	0000  BA 0000s			     MOV     DX,@data
+1    59	0003  8E DA			     MOV     DS,DX
+1    60	0005  8C D3			     MOV     BX,SS
+1    61	0007  2B DA			     SUB     BX,DX
+1    62	0009  D1 E3 D1 E3 D1 E3	D1+	     SHL     BX,4
+     63	      E3
+1    64	0011  FA			     CLI
+1    65	0012  8E D2			     MOV     SS,DX
+1    66	0014  03 E3			     ADD     SP,BX
+1    67	0016  FB			     STI
+     68	0017			     MAIN    PROC FAR
+     69	0017  B8 0000s			     MOV AX,@DATA
+     70	001A  8E D8			     MOV DS,AX
+     71	001C  8E C0			     MOV ES,AX
+     72	001E  B9 0000			     MOV CX, 0
+     73	0021  BB 0000			     MOV BX, 0
+     74	0024  BF 0014r				     LEA DI, byteArea
+     75	0027  FC				     CLD
+     76	0028			     LOOP1:
+     77					     PRINT_STR PROMPT	     ; Enter a string prompt
+1    78	0028  52			     PUSH DX
+1    79	0029  50			     PUSH AX
+1    80	002A  BA 0000r			     MOV DX,OFFSET PROMPT
+1    81	002D  B4 09			     MOV AH,9
+1    82	002F  CD 21			     INT 21H
+1    83	0031  58			     POP AX
+1    84	0032  5A			     POP DX
+     85					     GET_STR stringIn	     ; Get string from user
+1    86	0033  BA 0414r			     MOV DX,OFFSET stringIn
+1    87	0036  B4 0A			     MOV AH,0AH
+1    88	0038  CD 21			     INT 21H
+     89					     PRINT_STR NEWLINE	     ; <CR><LF>
+1    90	003A  52			     PUSH DX
+1    91	003B  50			     PUSH AX
+1    92	003C  BA 0011r			     MOV DX,OFFSET NEWLINE
+1    93	003F  B4 09			     MOV AH,9
+1    94	0041  CD 21			     INT 21H
+1    95	0043  58			     POP AX
+1    96	0044  5A			     POP DX
+     97
+     98	0045  80 3E 0416r 24			     CMP Act_Buf, '$'	     ; Terminate if the	first character	entered	is '$'
+     99	004A  74 15			     JZ	OUT1
+    100
+    101	004C  B5 00			     MOV CH, 0
+    102	004E  8A 0E 0415r		     MOV CL, Num	     ; Put number of characters	in CX
+    103	0052  BE 0416r			     LEA SI, Act_Buf	     ;			     ;
+    104	0055  F3> A4			     REP MOVSB		     ; copy string [si]	-> [di]
+    105	0057  C6 05 0D				     MOV [DI], BYTE PTR	0DH  ; \r    CR
+    106	005A  47				     INC DI
+    107	005B  C6 05 0A				     MOV [DI], BYTE PTR	0AH  ; \n    LF
+    108	005E  47				     INC DI
+    109
+    110	005F  EB C7			     JMP LOOP1
+    111
+    112	0061			     OUT1:   ;terminate	if '$' is first	char
+    113						     ;print strings in byteArea
+    114	0061  C6 05 24				     MOV [DI], BYTE PTR	'$'
+Turbo Assembler	 Version 4.1	    03/09/16 17:35:30	    Page 3
+hw4.ASM
+
+
+
+    115						     PRINT_STR byteArea
+1   116	0064  52			     PUSH DX
+1   117	0065  50			     PUSH AX
+1   118	0066  BA 0014r			     MOV DX,OFFSET byteArea
+1   119	0069  B4 09			     MOV AH,9
+1   120	006B  CD 21			     INT 21H
+1   121	006D  58			     POP AX
+1   122	006E  5A			     POP DX
+    123
+    124					     RET_DOS
+1   125	006F  B8 4C00			     MOV AX,4C00H	     ;return to	DOS
+1   126	0072  CD 21			     INT 21H
+    127					     .Exit
+1   128	0074  B4 4C			     MOV     AH,4Ch
+1   129	0076  CD 21			     INT     21h
+    130	0078			     MAIN    ENDP
+    131				     END
+Turbo Assembler	 Version 4.1	    03/09/16 17:35:30	    Page 4
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/09/16"
+??FILENAME			  Text	 "hw4	  "
+??TIME				  Text	 "17:35:30"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 _TEXT
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 HW4
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 2
+@STACK				  Text	 DGROUP
+@STARTUP			  Near	 _TEXT:0000
+@WORDSIZE			  Text	 2
+ACT_BUF				  Byte	 DGROUP:0416
+BYTEAREA			  Byte	 DGROUP:0014
+LOOP1				  Near	 _TEXT:0028
+MAIN				  Far	 _TEXT:0017
+NEWLINE				  Byte	 DGROUP:0011
+NUM				  Byte	 DGROUP:0415
+OUT1				  Near	 _TEXT:0061
+PROMPT				  Byte	 DGROUP:0000
+STRINGIN			  Byte	 DGROUP:0414
+
+Macro Name
+
+GET_CHAR
+GET_CHARNE
+GET_STR
+PRINT_CHAR
+PRINT_STR
+RET_DOS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  STACK				  16  010A Para	  Stack	  STACK
+  _DATA				  16  047A Word	  Public  DATA
+_TEXT				  16  0078 Word	  Public  CODE
+

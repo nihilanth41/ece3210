@@ -1,0 +1,63 @@
+Turbo Assembler	 Version 4.1	    04/21/15 13:45:18	    Page 1
+getdate.asm
+
+
+
+      1				     EXTRN CENTURY:BYTE
+      2				     EXTRN YEAR:BYTE
+      3				     EXTRN MONTH:BYTE
+      4				     EXTRN DAY:BYTE
+      5				     EXTRN CLK_STATUS:BYTE
+      6				     PUBLIC GET_DATE
+      7	0000			     .MODEL small
+      8	0000			     .CODE
+      9	0000			     GET_DATE  PROC FAR
+     10	0000  B4 04				     mov ah,04h			     ;int 1Ah read rtc date option
+     11	0002  CD 1A				     int 1ah			     ;invoke interrupt
+     12	0004  88 2E 0000e			     mov CENTURY,CH
+     13	0008  88 0E 0000e			     mov YEAR,CL
+     14	000C  88 36 0000e			     mov MONTH,DH
+     15	0010  88 16 0000e			     mov DAY,DL
+     16	0014  32 FF				     xor bh,bh			     ;copy carry flag to CLK_STATUS
+     17	0016  80 D7 00				     adc bh,0
+     18	0019  88 3E 0000e			     mov CLK_STATUS,bh	     ;CLK_STATUS=1 means clock is running
+     19	001D  CB					RET
+     20	001E			     GET_DATE	ENDP
+     21						END
+Turbo Assembler	 Version 4.1	    04/21/15 13:45:18	    Page 2
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "04/21/15"
+??FILENAME			  Text	 "getdate "
+??TIME				  Text	 "13:45:18"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 _TEXT
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 GETDATE
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 2
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+CENTURY				  Byte	 ----:---- Extern
+CLK_STATUS			  Byte	 ----:---- Extern
+DAY				  Byte	 ----:---- Extern
+GET_DATE			  Far	 _TEXT:0000
+MONTH				  Byte	 ----:---- Extern
+YEAR				  Byte	 ----:---- Extern
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  _DATA				  16  0000 Word	  Public  DATA
+_TEXT				  16  001E Word	  Public  CODE
+

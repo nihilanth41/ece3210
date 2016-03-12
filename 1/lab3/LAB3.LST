@@ -1,0 +1,154 @@
+Turbo Assembler	 Version 4.1	    03/10/15 13:28:29	    Page 1
+lab3.asm
+
+
+
+      1				     INCLUDE lab3.mac
+1     2				     PRINT_STR MACRO STRING
+1     3					     MOV DX,OFFSET STRING
+1     4					 MOV AH,9
+1     5					     INT 21H
+1     6				     ENDM
+1     7
+1     8				     GET_STR MACRO BUFFER
+1     9					     MOV DX,OFFSET BUFFER
+1    10					     MOV AH,0AH
+1    11					     INT 21H
+1    12				     ENDM
+1    13
+1    14				     GET_CHAR MACRO CHAR
+1    15					     MOV AH,01H
+1    16					     INT 21H
+1    17					     MOV CHAR,AL
+1    18				     ENDM
+1    19
+1    20				     GET_CHARNE	MACRO
+1    21					     MOV AH,07H		     ;no echo option
+1    22					     INT 21H
+1    23				     ENDM
+1    24
+1    25				     PRINT_CHAR	MACRO CHAR
+1    26					     MOV DL,CHAR
+1    27					     MOV AH,02H
+1    28					     INT 21H
+1    29				     ENDM
+1    30
+1    31				     RET_DOS MACRO
+1    32					     MOV AX,4C00H    ;return to	DOS
+1    33					     INT 21H
+1    34				     ENDM
+     35	0000			     .model small
+     36	0000			     .stack 100h
+     37	0000			     .data
+     38	0000  41 53 43 49 49 20	69+  PROMPT_STR	db "ASCII is: ",'$'  ;string to	clarify	program	purpose
+     39	      73 3A 20 24
+     40	000B  A3		     CHAR_PACKED db 0A3h			     ;hex value	to convert to ASCII
+     41	000C  ??		     CHAR_H  db	?				     ;location to store	first ASCII char
+     42	000D  ??		     CHAR_L  db	?				     ;location to store	second ASCII char
+     43	000E			     .code
+     44	0000			     main proc
+     45	0000  B8 0000s		     mov ax,@data				     ;
+     46	0003  8E D8		     mov ds,ax						     ;initialize data segment
+     47	0005  A0 000Br		     mov AL,CHAR_PACKED				     ;AL=A3
+     48	0008  8A E0		     mov AH,AL						     ;AH=A3
+     49	000A  25 F00F		     AND AX,0F00Fh				     ;AH=A0, AL=03
+     50	000D  B1 04		     mov CL,4						     ;shr 4
+     51	000F  D2 EC		     SHR AH,CL						     ;AH=0A, AL=03
+     52	0011  0D 3030		     OR	AX,3030h					     ;AH=3A  AL=33
+     53
+     54				     ;--CHECK FOR LETTER/NUMBER
+     55	0014  80 FC 39		     CMP AH,39h						     ;compares value in	AH to 39h
+     56	0017  7F 29		     JG	HEX_ADD1					     ;if AH>39h	then we	add 7h because the  +
+     57				     result is a letter-character
+Turbo Assembler	 Version 4.1	    03/10/15 13:28:29	    Page 2
+lab3.asm
+LAB 3
+
+
+     58	0019			     AGAIN:						     ;jump here	after first check
+     59	0019  3C 39		     CMP AL,39h						     ;similarly	for AL
+     60	001B  7F 2A		     JG	HEX_ADD2					     ;
+     61				     ;--jump here after	LETTER/NUMBER check
+     62	001D			     CONTINUE:
+     63	001D  86 E0		     XCHG AH,AL						     ;swap high	and low	byte
+     64	001F  88 26 000Cr	     MOV CHAR_H,AH				     ;store in memory
+     65	0023  A2 000Dr		     MOV CHAR_L,AL				     ;store in memory
+     66
+     67				     ;--print converted	characters to screen
+     68				     PRINT_STR PROMPT_STR
+1    69	0026  BA 0000r			     MOV DX,OFFSET PROMPT_STR
+1    70	0029  B4 09			 MOV AH,9
+1    71	002B  CD 21			     INT 21H
+     72				     PRINT_CHAR	CHAR_L
+1    73	002D  8A 16 000Dr		     MOV DL,CHAR_L
+1    74	0031  B4 02			     MOV AH,02H
+1    75	0033  CD 21			     INT 21H
+     76				     PRINT_CHAR	CHAR_H
+1    77	0035  8A 16 000Cr		     MOV DL,CHAR_H
+1    78	0039  B4 02			     MOV AH,02H
+1    79	003B  CD 21			     INT 21H
+     80				     ;--EXIT PROGRAM
+     81				     RET_DOS				     ;return to	DOS
+1    82	003D  B8 4C00			     MOV AX,4C00H    ;return to	DOS
+1    83	0040  CD 21			     INT 21H
+     84				     ;-----------
+     85	0042			     HEX_ADD1:
+     86	0042  80 C4 07		     ADD AH, 07h
+     87	0045  EB D2		     jmp AGAIN
+     88				     ;-----------
+     89	0047			     HEX_ADD2:
+     90	0047  04 07		     ADD AL, 07h
+     91	0049  EB D2		     jmp CONTINUE
+     92				     ;-----------
+     93	004B			     main endp
+     94				     end main
+Turbo Assembler	 Version 4.1	    03/10/15 13:28:29	    Page 3
+Symbol Table
+LAB 3
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/10/15"
+??FILENAME			  Text	 "lab3	  "
+??TIME				  Text	 "13:28:29"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 _TEXT
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 LAB3
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 2
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+AGAIN				  Near	 _TEXT:0019
+CHAR_H				  Byte	 DGROUP:000C
+CHAR_L				  Byte	 DGROUP:000D
+CHAR_PACKED			  Byte	 DGROUP:000B
+CONTINUE			  Near	 _TEXT:001D
+HEX_ADD1			  Near	 _TEXT:0042
+HEX_ADD2			  Near	 _TEXT:0047
+MAIN				  Near	 _TEXT:0000
+PROMPT_STR			  Byte	 DGROUP:0000
+
+Macro Name
+
+GET_CHAR
+GET_CHARNE
+GET_STR
+PRINT_CHAR
+PRINT_STR
+RET_DOS
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  STACK				  16  0100 Para	  Stack	  STACK
+  _DATA				  16  000E Word	  Public  DATA
+_TEXT				  16  004B Word	  Public  CODE
+

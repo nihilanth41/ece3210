@@ -1,0 +1,123 @@
+Turbo Assembler	 Version 4.1	    04/07/15 12:33:31	    Page 1
+part3.asm
+
+
+
+      1	0000			     .MODEL SMALL
+      2	0000			     .STACK 64
+      3				     ;----------------------------------------
+      4	0000			     .DATA
+      5	0000  52 41 43 45 43 41	24+  STR1    DB	     'RACECA','$',0AH,0DH
+      6	      0A 0D
+      7	0009  0A 24 0A*(24)	     DATA2   DB		     10,'$',10 dup('$')
+      8	0015  0A 0D 53 54 52 49	4E+  STR_PALIN	DB  0AH,0DH,'STRING IS PALINDROME.','$'
+      9	      47 20 49 53 20 50	41+
+     10	      4C 49 4E 44 52 4F	4D+
+     11	      45 2E 24
+     12	002D  0A 0D 53 54 52 49	4E+  STR_NOT_PALIN   DB	     0AH,0DH,'STRING IS	NOT PALINDROME.','$'
+     13	      47 20 49 53 20 4E	4F+
+     14	      54 20 50 41 4C 49	4E+
+     15	      44 52 4F 4D 45 2E	24
+     16				     ;----------------------------------------
+     17	0049			     .CODE
+     18	0000			     MAIN PROC FAR
+     19	0000  B8 0000s			   MOV AX,@DATA
+     20	0003  8E D8			   MOV DS,AX
+     21	0005  BE 0000r			   MOV SI,OFFSET STR1	;DATA1 USED TO STORE THE STRING
+     22	0008  BF 0009r			   MOV DI,OFFSET DATA2	;DATA2 USED TO STORE THE REVERSE STRING
+     23				     ;PRINT THE	STRING
+     24	000B  B4 09			   MOV AH,09H		;DISPLAY FUNCTION
+     25	000D  BA 0000r			   MOV DX,OFFSET STR1	;DX POINTS TO OUTPUT BUFFER
+     26	0010  CD 21			   INT 21H
+     27
+     28				     ;GET THE REVERSE OF THE STRING
+     29	0012  B9 0000			   MOV CX,0		;CX=0
+     30	0015  46		       L1: INC SI
+     31	0016  41			   INC CX
+     32	0017  80 3C 24			   CMP BYTE PTR[SI],'$'	;FIND THE END OF THE STRING
+     33	001A  75 F9			   JNE L1		;REFIND	IF NOT '$'
+     34	001C  4E			   DEC SI		;GET THE LAST ADDRESS OF THE STRING
+     35	001D  BF 0009r			   MOV DI, OFFSET DATA2	;GET THE ADDRESS OF THE	REVERSE	STRING
+     36
+     37	0020  8A 04		       L2: MOV AL,BYTE PTR[SI]	;SEND THE CONTENT OF THE STRING	TO AL
+     38	0022  88 05			   MOV BYTE PTR[DI],AL	;INPUT THE REVERSE STRING'S ADDRESS TO DI
+     39	0024  4E			   DEC SI
+     40	0025  47			   INC DI
+     41	0026  E2 F8			   LOOP	L2
+     42	0028  C6 05 24			   MOV BYTE PTR[DI],'$'	;THE END OF THE	REVERSE	STRING
+     43					       ;reverse	string in DATA2
+     44
+     45
+     46
+     47				     ;PRINT THE	STRING IS PALINDROME OR	NOT
+     48	002B  BE 0000r			   MOV SI,offset STR1			;THE STRING
+     49	002E  BF 0009r			   MOV DI,offset DATA2	       ;THE REVERSE STRING
+     50
+     51	0031  8A 1D		       L3: MOV BL,BYTE PTR[DI]	;INPUT ONE CHARACTER INTO BL
+     52	0033  38 1C			   CMP BYTE PTR[SI],BL	;COMPARA THE SAME POSITION OF TWO STRING
+     53	0035  75 11			   JNE L4		;TWO STRING ARE	NOT SAME
+     54	0037  46			   INC SI
+     55	0038  47			   INC DI
+     56	0039  80 3D 24			   CMP BYTE PTR[DI],'$'	;KNOW WHETHER THE STRING IS END	OR NOT
+     57	003C  75 F3			   JNE L3		;CONTINUE LOOP IF NOT
+Turbo Assembler	 Version 4.1	    04/07/15 12:33:31	    Page 2
+part3.asm
+
+
+
+     58	003E  B4 09			   MOV AH,09H		;THE STRING IS PALIN,DISPLAY THE RESULT
+     59	0040  BA 0015r			   MOV DX, OFFSET STR_PALIN
+     60	0043  CD 21			   INT 21H
+     61
+     62	0045  EB 08 90			   JMP L5		;END THIS PROGRAM
+     63
+     64	0048  B4 09		       L4: MOV AH,09H
+     65	004A  BA 002Dr			   MOV DX,OFFSET STR_NOT_PALIN
+     66	004D  CD 21			   INT 21H
+     67
+     68	004F  B4 4C		       L5: MOV AH,4CH
+     69	0051  CD 21			   INT 21H
+     70	0053			     MAIN ENDP
+     71					  END MAIN
+Turbo Assembler	 Version 4.1	    04/07/15 12:33:31	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "04/07/15"
+??FILENAME			  Text	 "part3	  "
+??TIME				  Text	 "12:33:31"
+??VERSION			  Number 040A
+@32BIT				  Text	 0
+@CODE				  Text	 _TEXT
+@CODESIZE			  Text	 0
+@CPU				  Text	 0101H
+@CURSEG				  Text	 _TEXT
+@DATA				  Text	 DGROUP
+@DATASIZE			  Text	 0
+@FILENAME			  Text	 PART3
+@INTERFACE			  Text	 000H
+@MODEL				  Text	 2
+@STACK				  Text	 DGROUP
+@WORDSIZE			  Text	 2
+DATA2				  Byte	 DGROUP:0009
+L1				  Near	 _TEXT:0015
+L2				  Near	 _TEXT:0020
+L3				  Near	 _TEXT:0031
+L4				  Near	 _TEXT:0048
+L5				  Near	 _TEXT:004F
+MAIN				  Far	 _TEXT:0000
+STR1				  Byte	 DGROUP:0000
+STR_NOT_PALIN			  Byte	 DGROUP:002D
+STR_PALIN			  Byte	 DGROUP:0015
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+DGROUP				  Group
+  STACK				  16  0040 Para	  Stack	  STACK
+  _DATA				  16  0049 Word	  Public  DATA
+_TEXT				  16  0053 Word	  Public  CODE
+
